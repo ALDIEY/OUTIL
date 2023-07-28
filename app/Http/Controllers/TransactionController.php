@@ -118,4 +118,69 @@ DB::commit();
  ]);
  return response()->json($transaction);
     }
+
+
+
+    //retrait
+    public function retrait($montant, $numero)
+{
+       $client = Client::where('clients.numero', $numero)->first();
+    $typeCompte = $client->typeCompte;
+    $compte = Compte::where('client_id', $client->id)->first();
+
+    if ($typeCompte !== 'Wari' && !$client->comptes->contains('typeCompte', $typeCompte)) {
+        return response()->json(['message' => 'Vous n\'avez pas de compte du même type chez ce fournisseur.'], 422);
+    }
+
+    $montantMinimum = 0;
+    switch ($typeCompte) {
+        case 'Orange Money':
+        case 'Wave':
+            $montantMinimum = 500;
+            break;
+        case 'Wari':
+            $montantMinimum = 1000;
+            break;
+        case 'CB':
+            $montantMinimum = 10000;
+            break;
+    }
+    if ($montant < $montantMinimum) {
+        return response()->json(['message' =>
+        'Le montant est inférieur au montant minimum autorisé pour ce fournisseur.'], 422);
+    }
+
+
+    if ($compte->solde < $montant) {
+        return response()->json(['message' => 'Solde insuffisant pour effectuer ce retrait.'], 422);
+    }
+
+    $codeRetrait = null;
+    if ($typeCompte !== 'Wari') {
+        $codeRetrait = rand(pow(10, 24), pow(10, 25) - 1);
+    }
+
+    $codeRetraitImmediat = null;
+    $dateLimiteRetraitImmediat = null;
+    if ($typeCompte === 'CB') {
+        $codeRetraitImmediat = rand(pow(10, 29), pow(10, 30) - 1);
+        $dateLimiteRetraitImmediat = now()->addHours(24);
+    }
+
+    $compte->decrement('solde', $montant);
+
+    $transaction = Transaction::create([
+        'client_id' => $client->id,
+        'compte_id' => $compte->id,
+        'montant' => $montant,
+        'statut' => 'retrait',
+        'code_retrait' => $codeRetrait,
+        'code_retrait_immediat' => $codeRetraitImmediat,
+        'date_limite_retrait_immediat' => $dateLimiteRetraitImmediat,
+    ]);
+
+    return response()->json($transaction);
+}
+
+
 }
