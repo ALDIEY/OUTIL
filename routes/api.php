@@ -18,5 +18,5 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::post('/depot/{montant}/{numero}',[TransactionController::class,'depot']);
-Route::post('/retrait/{montant}/{numero}',[TransactionController::class,'depot']);
+Route::post('/depot',[TransactionController::class,'depot']);
+Route::post('/retrait',[TransactionController::class,'retrait']);

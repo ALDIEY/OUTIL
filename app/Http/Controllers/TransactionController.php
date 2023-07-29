@@ -67,7 +67,9 @@ class TransactionController extends Controller
     {
         //
     }
-    public function depot($montant,$numero) {
+    public function depot(Request $request) {
+        $montant=$request->input('montant');
+        $numero=$request->input('numero');
         $numeroClie=Client::where('clients.numero',$numero)->first()->id;
 
         $fournisseur = Compte::where('comptes.client_id', $numeroClie)->first()->typeCompte;
@@ -87,7 +89,8 @@ class TransactionController extends Controller
         }
     
         if ($montant < $montantMinimum) {
-            return response()->json(['message' => 'Le montant est inférieur au montant minimum autorisé pour ce fournisseur.'], 422);
+            return response()->json(['message' =>
+             'Le montant est inférieur au montant minimum autorisé pour ce fournisseur.'], 422);
         }
     
         $montantMaximum = 1000000;
@@ -108,32 +111,36 @@ DB::commit();
     DB::rollBack();
     throw $th;
 
- }
- $transaction=transaction::create([
+   }
+   $transaction=transaction::create([
     'client_id'=> $numeroClient,
     'compte_id'=>$compteId,
     'montant'=>$montant,
     'statut'=>'depot',
     'frait'=>0
- ]);
- return response()->json($transaction);
+    ]);
+   return response()->json($transaction);
     }
 
 
 
     //retrait
-    public function retrait($montant, $numero)
-{
+    public function retrait(Request $request)
+   {
+    $montant=$request->input('montant');
+    $numero=$request->input('numero');
+   
        $client = Client::where('clients.numero', $numero)->first();
-    $typeCompte = $client->typeCompte;
+    $typeCompte = Compte::where('client_id',$client->id)->first()->typeCompte;
+
     $compte = Compte::where('client_id', $client->id)->first();
 
-    if ($typeCompte !== 'Wari' && !$client->comptes->contains('typeCompte', $typeCompte)) {
-        return response()->json(['message' => 'Vous n\'avez pas de compte du même type chez ce fournisseur.'], 422);
-    }
-
+    // if ($typeCompte !== 'Wari' && !$client->comptes->contains('typeCompte', $typeCompte)) {
+    //     return response()->json(['message' => 'Vous n\'avez pas de compte du même type chez ce fournisseur.'], 422);
+    // }
     $montantMinimum = 0;
-    switch ($typeCompte) {
+    switch ($typeCompte)
+    {
         case 'Orange Money':
         case 'Wave':
             $montantMinimum = 500;
@@ -145,29 +152,34 @@ DB::commit();
             $montantMinimum = 10000;
             break;
     }
-    if ($montant < $montantMinimum) {
+    if ($montant < $montantMinimum)
+    {
         return response()->json(['message' =>
         'Le montant est inférieur au montant minimum autorisé pour ce fournisseur.'], 422);
     }
 
 
-    if ($compte->solde < $montant) {
+    if ($compte->solde < $montant)
+    {
         return response()->json(['message' => 'Solde insuffisant pour effectuer ce retrait.'], 422);
     }
 
     $codeRetrait = null;
-    if ($typeCompte !== 'Wari') {
-        $codeRetrait = rand(pow(10, 24), pow(10, 25) - 1);
+    if ($typeCompte !== 'Wari')
+    {
+        $codeRetrait =random_int(pow(10,9-1), pow(10,10)-1);
     }
 
     $codeRetraitImmediat = null;
     $dateLimiteRetraitImmediat = null;
-    if ($typeCompte === 'CB') {
-        $codeRetraitImmediat = rand(pow(10, 29), pow(10, 30) - 1);
+    if ($typeCompte === 'CB')
+    {
+        $codeRetraitImmediat = random_int(pow(10,9-1), pow(10,10)-1);
         $dateLimiteRetraitImmediat = now()->addHours(24);
     }
-
+    
     $compte->decrement('solde', $montant);
+    
 
     $transaction = Transaction::create([
         'client_id' => $client->id,
@@ -180,7 +192,7 @@ DB::commit();
     ]);
 
     return response()->json($transaction);
-}
+   }
 
 
-}
+ }

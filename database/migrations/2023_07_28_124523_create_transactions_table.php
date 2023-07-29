@@ -20,6 +20,10 @@ return new class extends Migration
             $table->integer('montant');
             $table->integer('frais');
             $table->enum('statut',['depot','retrait','compte_compte']);
+            $table->integer('code_retrait')->nullable();
+            $table->integer('code_retrait_immediat')->nullable();
+            $table->timestamp('date_limite_retrait_immediat')->nullable();
+          
             $table->timestamps();
         });
     }

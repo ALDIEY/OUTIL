@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('solde');
             $table->enum('typeCompte',['Orange Money','Wave','Wari','CB']);
             $table->string('numeroCompte')->unique();
-            $table->timestamps();
+             $table->timestamps();
         });
     }
 
