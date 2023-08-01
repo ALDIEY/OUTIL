@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
+ public function   findClient($numero){
+ $clientnum=Client::where('clients.numero',$numero)->first();
+ return response()->json($clientnum);
+}
     /**
      * Display a listing of the resource.
      */
